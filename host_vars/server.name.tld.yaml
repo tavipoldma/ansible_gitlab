@@ -1,0 +1,144 @@
+---
+
+#rEn1rKFZ-iBhAk-EqypS temp funner reg
+
+# dockerhub tag
+gitlab_version: '12.10.3-ee.0'
+gitlab_runner_verison: 'ubuntu-v12.10.2'
+
+gitlab_fqdn: 'server.name.tld'
+gitlab_url: 'https://{{ gitlab_fqdn }}'
+gitlab_url_api: 'https://{{ gitlab_fqdn }}/api/v4'
+gitlab_registry_fqdn: 'server-registry.name.tld'
+gitlab_registry_url: 'https://{{ gitlab_registry_fqdn }}'
+
+nginx_vhosts:
+  - fqdn: '{{ gitlab_fqdn }}'
+    locations:
+      - path: '/'
+        proxy_pass: 'http://gitlab:80'
+  - fqdn: '{{ gitlab_registry_fqdn }}'
+    locations:
+      - path: '/'
+        proxy_pass: 'http://gitlab:80'
+
+gitlab_smtp_enabled: 'true'
+gitlab_smtp_address: 'mail.name.tld'
+gitlab_smtp_domain: 'name.tld'
+gitlab_smtp_port: '25'
+
+gitlab_default_user_passwd: 'default123'
+gitlab_root_personal_passwd: 'default123'
+
+# on the remote host, will be copied inside runners
+gitlab_certificate_path: "/srv/nginx/ssl/server.crt"
+
+gitlab_runners:
+### for regular tasks
+- name: runner-docker-1
+  privileged: False
+  capabilities: []
+  untagged: 'true'
+  taglist: 'default'
+  executor: "docker"
+  executor_image: "ubuntu:18.04"
+  runner_ip: '172.18.0.62'
+#- name: runner-docker-2
+#  privileged: False
+#  capabilities: []
+#  untagged: 'true'
+#  taglist: 'default'
+#  executor: "docker"
+#  executor_image: "ubuntu:18.04"
+#  runner_ip: '172.18.0.63'
+#- name: runner-docker-3
+#  privileged: False
+#  capabilities: []
+#  untagged: 'true'
+#  taglist: 'default'
+#  executor: "docker"
+#  executor_image: "ubuntu:18.04"
+#  runner_ip: '172.18.0.64'
+
+
+### PRIVILEGED ! for building dockers n such
+- name: runner-docker-priv-1
+  privileged: True
+  capabilities:
+  - CAP_NET_ADMIN
+  - CAP_NET_RAW
+  untagged: 'false'
+  taglist: 'priv'
+  executor: "docker"
+  executor_image: "ubuntu:18.04"
+  runner_ip: '172.18.0.72'
+#- name: runner-docker-priv-2
+#  privileged: True
+#  capabilities:
+#    - CAP_NET_ADMIN
+#    - CAP_NET_RAW
+#  untagged: 'false'
+#  taglist: 'priv'
+#  executor: "docker"
+#  executor_image: "ubuntu:18.04"
+#  runner_ip: '172.18.0.73'
+#- name: runner-docker-priv-3
+#  privileged: True
+#  capabilities:
+#    - CAP_NET_ADMIN
+#    - CAP_NET_RAW
+#  untagged: 'false'
+#  taglist: 'priv'
+#  executor: "docker"
+#  executor_image: "ubuntu:18.04"
+#  runner_ip: '172.18.0.74'
+
+
+gitlab_groups:
+- name: testing-group-1
+  variables:
+  - name: TESTING_GROUP_VARIABLE_1
+    value: TESTING_GROUP_SECRET_1
+  - name: TESTING_GROUP_VARIABLE_2
+    value: TESTING_GROUP_SECRET_2
+- name: testing-group-2
+  variables:
+  - name: TESTING_GROUP_VARIABLE_3
+    value: TESTING_GROUP_SECRET_3
+  - name: TESTING_GROUP_VARIABLE_4
+    value: TESTING_GROUP_SECRET_4
+- name: testing-group-3
+
+gitlab_projects:
+- name: test-project-1
+  group_name: testing-group-1
+  variables:
+    - name: TESTING_PROJECT_VARIABLE_1
+      value: TESTING_PROJECT_SECRET_1
+    - name: TESTING_PROJECT_VARIABLE_2
+      value: TESTING_PROJECT_SECRET_2
+- name: test-project-2
+  group_name: testing-group-1
+- name: test-project-3
+  group_name: testing-group-2
+- name: test_project_yolo
+  group_name: testing-group-3
+
+gitlab_users:
+- name: "TESTER ADMIN"
+  username: tester_admin
+  password: '{{ gitlab_default_user_passwd }}'
+  email: tester-admin@tester.tester
+  admin: true
+  ssh_key: "SSH PUBLIC KEY"
+  groups:
+  - testing-group-1
+  - testing-group-2
+- name: tester
+  username: tester
+  password: '{{ gitlab_default_user_passwd }}'
+  email: tester@tester.tester
+  admin: false
+  ssh_key: "SSH PUBLIC KEY"
+  groups:
+  - testing-group-1

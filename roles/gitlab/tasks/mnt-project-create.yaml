@@ -1,0 +1,10 @@
+---
+#- debug: var=project
+- name: add {{ project.name }} project to group {{ project.group_name }}
+  raw: |
+    api_url={{ gitlab_url_api }}
+    token=`cat {{ gitlab_root_token_path }}`
+    group_name={{ project.group_name }}
+    project_name={{ project.name }}
+    group_id=`curl -k -s -XGET -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/groups/${group_name} | jq -r '.id'`
+    curl -k -s -XPOST -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/projects -d "{ \"name\": \"${project_name}\", \"namespace_id\": \"${group_id}\", \"description\": \"${project_name}\" }"

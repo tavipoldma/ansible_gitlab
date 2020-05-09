@@ -1,0 +1,22 @@
+---
+- apt: name={{ packages_list }} update_cache=yes cache_valid_time=86400
+- apt_key: keyserver={{ apt_key_server }} id={{ apt_key_id }}
+- apt_repository: repo={{ apt_repo }} state=present update_cache=yes
+- apt: name=docker-ce state=latest
+- systemd: name=docker state=started enabled=yes
+
+- name: uninstall docker-py if exists
+  pip:
+    name: docker-py
+    state: absent
+
+#pip install docker
+- name: uninstall Docker Module for Python
+  pip:
+    name: docker
+    state: absent
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+    state: present

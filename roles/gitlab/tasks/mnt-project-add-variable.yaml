@@ -1,0 +1,15 @@
+---
+#- debug: var=project
+- name: add project {{ project.name }} variable
+  raw: |
+    api_url={{ gitlab_url_api }}
+    token=`cat {{ gitlab_root_token_path }}`
+    project_name={{ project.name }}
+    variable_name={{ item.name }}
+    variable_value={{ item.value }}
+    project_id=`curl -k -s -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/projects?search=${project_name} | jq -r '.[].id'`
+    curl -k -s -XPOST \
+        -H "Content-type: application/json" \
+        -H "PRIVATE-TOKEN: $token" ${api_url}/projects/${project_id}/variables \
+        -d "{ \"key\": \"${variable_name}\", \"variable_type\": \"env_var\", \"value\": \"${variable_value}\" }"
+  with_items: '{{ project.variables }}'

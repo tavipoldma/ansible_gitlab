@@ -1,0 +1,28 @@
+---
+required_vars:
+- nginx_vhosts
+- docker_network_dns
+- docker_network_name
+- docker_network_subnet
+
+container_name: 'nginx'
+container_image: 'nginx:1.18-alpine'
+container_folder: '/srv/{{ container_name }}'
+container_dns_server: '{{ docker_network_dns }}'
+container_network:
+- name: '{{ docker_network_name }}'
+  aliases:
+    - '{{ container_name }}'
+container_port_binds:
+- '80:80'
+- '443:443'
+
+container_volumes:
+- '{{ container_folder }}/nginx.conf:/etc/nginx/nginx.conf'
+- '{{ container_folder }}/conf.d:/etc/nginx/conf.d'
+- '{{ container_folder }}/ssl:/etc/nginx/ssl'
+- '{{ container_folder }}/www:/var/www'
+- '{{ container_folder }}/logs:/var/log/nginx'
+
+container_env:
+container_user:

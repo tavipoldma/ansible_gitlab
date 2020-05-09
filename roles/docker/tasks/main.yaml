@@ -1,0 +1,5 @@
+---
+- include_tasks: install-docker.yaml
+- include_tasks: move-docker.yaml
+  when: move_docker_lib_to_srv == true
+- include_tasks: container-networks.yaml

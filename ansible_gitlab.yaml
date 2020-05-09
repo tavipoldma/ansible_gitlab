@@ -1,0 +1,24 @@
+---
+- hosts: "{{ external_hosts | default('all') }}"
+
+- import_playbook: docker.yaml
+  tags: [ docker ]
+
+- import_playbook: gitlab.yaml
+  tags: [ gitlab ]
+
+# runners need gitlab up via https so nginx before !
+- import_playbook: nginx.yaml
+  tags: [ nginx ]
+
+- import_playbook: gitlab_runners.yaml
+  tags: [ gitlab_runners ]
+
+- import_playbook: gitlab_groups.yaml
+  tags: [ gitlab_groups ]
+
+- import_playbook: gitlab_projects.yaml
+  tags: [ gitlab_projects ]
+
+- import_playbook: gitlab_users.yaml
+  tags: [ gitlab_users ]

@@ -1,0 +1,11 @@
+---
+- include_tasks: mnt-project-create.yaml
+  loop: '{{ gitlab_projects }}'
+  loop_control:
+    loop_var: 'project'
+
+- include_tasks: mnt-project-add-variable.yaml
+  when: project.variables is defined
+  loop: '{{ gitlab_projects }}'
+  loop_control:
+    loop_var: 'project'

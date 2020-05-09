@@ -1,0 +1,36 @@
+---
+#required_vars:
+#- gitlab_container_name
+#- gitlab_url
+#- gitlab_fqdn
+#- gitlab_registry_url
+#- gitlab_registry_fqdn
+#- gitlab_certificate_path
+#- container_name
+#- container_ip
+#- runner_untagged
+#- runner_taglist
+#- runner_executor
+#- runner_executor_image
+#- runner_privileged
+
+
+container_image: 'gitlab/gitlab-runner:{{ gitlab_runner_verison }}'
+container_folder: '/srv/{{ container_name }}'
+container_dns_server: '{{ docker_network_dns }}'
+container_network:
+- name: '{{ docker_network_name }}'
+  ipv4_address: '{{ container_ip }}'
+  aliases:
+    - '{{ container_name }}'
+
+container_port_binds:
+container_volumes:
+- "{{ container_folder }}:/etc/gitlab-runner"
+- "/var/run/docker.sock:/var/run/docker.sock"
+
+container_env:
+container_user:
+
+#for faster testing
+#registration_token: ''

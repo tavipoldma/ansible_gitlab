@@ -1,0 +1,64 @@
+---
+- name: create directories
+  file: path={{ item }} recurse=yes state=directory
+  with_items:
+    - '{{ container_folder }}'
+    - '{{ container_folder }}/etc'
+    - '{{ container_folder }}/data'
+    - '{{ container_folder }}/logs'
+    - '{{ container_folder }}/registry'
+
+- name: install {{ container_name }} container
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    pull: yes
+    state: started
+    recreate: yes
+    interactive: yes
+    dns_servers: "{{ container_dns_server }}"
+    ports: '{{ container_port_binds }}'
+    volumes: '{{ container_volumes }}'
+    restart_policy: unless-stopped
+    networks: '{{ container_network }}'
+    env: '{{ container_env }}'
+    user: '{{ container_user }}'
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: 1
+    networks_cli_compatible: yes
+
+# IF YOU NEED CERTIFICATES INSIDE RUNNER, you could also bind mount them but this is more disposable imo
+- name: copy {{ gitlab_certificate_path }} {{ container_folder }}/server.crt on remote host
+  copy: src={{ gitlab_certificate_path }} dest={{ container_folder }}/server.crt remote_src=true
+- name: copy cert to gitlab runner container
+  raw: docker cp {{ container_folder }}/server.crt {{ container_name }}:/usr/local/share/ca-certificates/server.crt
+- name: update ca on runner
+  raw: docker exec -it {{ container_name }} /bin/bash update-ca-certificates
+- name: cleanup crt
+  file: path={{ container_folder }}/server.crt state=absent
+
+- name: wait until {{ container_name }} is healthy
+  shell: docker ps -a -f name={{ container_name }} --format {%raw%}"table {{.Status}}"{%endraw%} | awk 'FNR == 2 {print}'
+  register: container_status
+  until: container_status.stdout.find("healthy") != -1
+  retries: 90
+  delay: 5
+
+### save root token once
+- stat: path={{ gitlab_root_token_path }}
+  register: root_token_exists
+
+- when: root_token_exists.stat.exists == false
+  block:
+    - set_fact:
+        api_token: '{{ "semi_random_hash" | hash("md5") }}'
+    - include_tasks: mnt-user-add-apitoken.yaml
+      vars:
+        username: root
+        token: '{{ api_token }}'
+    - name: save root apitoken
+      copy:
+        content: '{{ api_token }}'
+        dest: '{{ gitlab_root_token_path }}'

@@ -1,0 +1,13 @@
+---
+# check if docker is already moved
+- stat: path=/var/lib/docker
+  register: links
+
+# if not, move it
+- block:
+  - systemd: name=docker state=stopped enabled=yes
+  - file: path=/srv/docker_lib/ recurse=yes state=directory
+  - command: mv /var/lib/docker /srv/docker_lib/
+  - file: src=/srv/docker_lib/ dest=/var/lib/docker state=link
+  - systemd: name=docker state=started enabled=yes
+  when: links.stat.islnk is defined and links.stat.islnk == false

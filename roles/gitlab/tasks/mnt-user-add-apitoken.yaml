@@ -1,0 +1,13 @@
+---
+- name: add {{ username }} token
+  raw: |
+    add_token="{{ token }}"
+    add_user="{{ username }}"
+    container_name="{{ container_name }}"
+    cat <<-EOF | docker exec -i {{ container_name }} gitlab-rails console --environment=production && echo -n "$add_token"
+        tokens = User.find_by_username('$add_user').personal_access_tokens
+        if !tokens[0] || !tokens[0].token_digest
+           personal_access_token = User.find_by_username('$add_user').personal_access_tokens.create( name: 'apitoken', token_digest: Gitlab::CryptoHelper.sha256('$add_token'), impersonation: false, scopes: [:api, :read_user] )
+        end
+        EOF
+

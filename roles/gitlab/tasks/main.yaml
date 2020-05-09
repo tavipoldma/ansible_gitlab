@@ -1,0 +1,12 @@
+---
+- include_tasks: container-gitlab.yaml
+
+#- include_vars: cs_users.yaml
+#- include_tasks: mnt-user-create.yaml
+#  with_items: '{{ cs_users }}'
+#- include_tasks: mnt-user-add-ssh-key.yaml
+#  with_items: '{{ cs_users }}'
+
+#  loop: '{{ cs_users }}'
+#  loop_control:
+#    loop_var: 'user'

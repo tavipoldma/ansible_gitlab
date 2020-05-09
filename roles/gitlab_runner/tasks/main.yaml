@@ -1,0 +1,89 @@
+---
+# GET RUNNER REGISTRATION TOKEN
+- block:
+    # this token changes after boots and upgrades, query is slow so save if need to run often
+    - name: get runner registration token
+      raw: docker exec -it {{ gitlab_container_name | default("gitlab") }} bash -c 'echo "Gitlab::CurrentSettings.current_application_settings.runners_registration_token" | gitlab-rails console --environment=production' | grep -o '".*"' | sed 's/"//g'
+      register: registration_token_raw
+    - debug: var=registration_token_raw.stdout
+    - set_fact:
+        registration_token: '{{ registration_token_raw.stdout | trim }}'
+  when: registration_token is not defined
+- debug: var=registration_token
+
+# CHECK RUNNERS
+- name: get runner status
+  shell: docker ps -a -f name={{ container_name }} --format {%raw%}"table {{.Status}}"{%endraw%} | awk 'FNR == 2 {print}' | awk '{print tolower($1)}'
+  register: runner_status
+- debug: var=runner_status.stdout
+
+## if runner container exists, unregister runner and remove container
+- block:
+    - name: unregister runner
+      raw: docker exec -it {{ container_name }} /usr/bin/gitlab-runner unregister \
+        --url "{{ gitlab_url }}" \
+        --name "{{ container_name }}"
+      register: unregister_result
+      failed_when: unregister_result.stdout.find("error") == 1
+    - file: path={{ container_folder }}/config.toml state=absent
+    - docker_container: name={{ container_name }} state=stopped
+    - docker_container: name={{ container_name }} state=absent
+  when: runner_status.stdout == "up"
+
+# FOLDERS
+- name: create directories
+  file: path={{ item }} recurse=yes state=directory
+  with_items:
+    - '{{ container_folder }}'
+
+# REMOVE OLD CONF
+- file: path={{ container_folder }}/config.toml state=absent
+
+# CONTAINER
+- name: Install Gitlab Runner container
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    pull: yes
+    state: started
+    recreate: yes
+    privileged: "{{ runner_privileged }}"
+    capabilities: "{{ runner_capabilities }}"
+    dns_servers: "{{ container_dns_server }}"
+    ports: '{{ container_port_binds }}'
+    volumes: '{{ container_volumes }}'
+    restart_policy: always
+    networks: '{{ container_network }}'
+    env: '{{ container_env }}'
+    user: '{{ container_user }}'
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: 1
+    networks_cli_compatible: yes
+
+# IF YOU NEED CERTIFICATES INSIDE RUNNER, you could also bind mount them but this is more disposable imo
+- name: copy {{ gitlab_certificate_path }} {{ container_folder }}/server.crt on remote host
+  copy: src={{ gitlab_certificate_path }} dest={{ container_folder }}/server.crt remote_src=true
+- name: copy cert to gitlab runner container
+  raw: docker cp {{ container_folder }}/server.crt {{ container_name }}:/usr/local/share/ca-certificates/server.crt
+- name: update ca on runner
+  raw: docker exec -it {{ container_name }} /bin/bash update-ca-certificates
+- name: cleanup crt
+  file: path={{ container_folder }}/server.crt state=absent
+
+- name: register runner | {{ container_name }}
+  raw: docker exec -it {{ container_name }} /usr/bin/gitlab-runner \
+    register \
+    --non-interactive \
+    --executor "{{ runner_executor }}" \
+    --docker-image {{ runner_executor_image }} \
+    --docker-privileged="{{ runner_privileged }}" \
+    --run-untagged="{{ runner_untagged }}" \
+    --tag-list "{{ runner_taglist }}" \
+    --locked="false" \
+    --url "{{ gitlab_url }}" \
+    --registration-token {{ registration_token }} \
+    --description "{{ container_name }}"
+  register: register_result
+  failed_when: register_result.stdout.find("successfully") == -1

@@ -1,0 +1,5 @@
+# ipv4_gateway is used for ntp at this time
+localhost ansible_connection=local #ansible_python_interpreter=/usr/bin/python3
+
+#CHANGE ME TODO
+server.name.tld

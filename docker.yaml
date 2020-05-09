@@ -1,0 +1,5 @@
+---
+- hosts: "{{ external_hosts | default('all') }}"
+  tasks:
+    - include_role: name=docker
+      #when: '"docker" in group_names'

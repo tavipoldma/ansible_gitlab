@@ -1,0 +1,8 @@
+---
+#- debug: var=group
+- name: add {{ group.name }} group
+  raw: |
+    api_url={{ gitlab_url_api }}
+    token=`cat {{ gitlab_root_token_path }}`
+    group_name={{ group.name }}
+    curl -k -s -XPOST -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/groups --data "{ \"name\": \"${group_name}\", \"path\": \"${group_name}\"  }"

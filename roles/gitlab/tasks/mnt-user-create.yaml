@@ -1,0 +1,9 @@
+---
+#- debug: var=user
+- name: add user {{ user.username }}
+  raw: |
+    api_url={{ gitlab_url_api }}
+    token=`cat {{ gitlab_root_token_path }}`
+    data='{ "name": "{{ user.name }}", "username": "{{ user.username }}", "email": "{{ user.email }}", "admin": "{{ user.admin }}", "reset_password": "false", "password": "{{ user.password }}", "skip_confirmation": "true", "skip_reconfirmation": "true"  }'
+    curl -k -s -XPOST -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/users -d "$data"
+

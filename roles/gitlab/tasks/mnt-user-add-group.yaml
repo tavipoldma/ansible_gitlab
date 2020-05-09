@@ -1,0 +1,12 @@
+---
+#- debug: var=project
+- name: add user {{ user.username }} to group {{ item }}
+  raw: |
+    api_url={{ gitlab_url_api }}
+    token=`cat {{ gitlab_root_token_path }}`
+    username={{ user.username }}
+    group_name={{ item }}
+    user_id=`curl -k -s -XGET -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" "${api_url}/users?username=$username&with_custom_attributes=true" | jq -r '.[].id'`
+    group_id=`curl -k -s -XGET -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/groups/${group_name} | jq -r '.id'`
+    curl -k -s -XPOST -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" -d "{ \"user_id\": \"${user_id}\", \"access_level\": \"50\" }" ${api_url}/groups/${group_id}/members
+  with_items: '{{ user.groups }}'

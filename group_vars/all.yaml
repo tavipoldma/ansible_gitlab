@@ -1,0 +1,11 @@
+---
+ansible_python_interpreter: /usr/bin/python3
+ansible_user: 'root'
+ansible_connection: 'ssh'
+
+dns_server: 1.1.1.1
+
+docker_network_name: 'local-network'
+docker_network_subnet: '172.18.0.0/16'
+docker_network_gateway: '172.18.0.1'
+docker_network_dns: '{{ dns_server }}'

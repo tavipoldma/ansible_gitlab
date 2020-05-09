@@ -1,0 +1,12 @@
+---
+- include_tasks: mnt-group-create.yaml
+  loop: '{{ gitlab_groups }}'
+  loop_control:
+    loop_var: 'group'
+
+- include_tasks: mnt-group-add-variable.yaml
+  when: group.variables is defined
+  loop: '{{ gitlab_groups }}'
+  loop_control:
+    loop_var: 'group'
+

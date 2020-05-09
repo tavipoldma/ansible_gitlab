@@ -1,0 +1,5 @@
+---
+- hosts: "{{ external_hosts | default('all') }}"
+  tasks:
+    - include_role: name=nginx
+     #when: '"nginx" in group_names'

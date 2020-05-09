@@ -1,0 +1,17 @@
+---
+- include_tasks: mnt-user-create.yaml
+  loop: '{{ gitlab_users }}'
+  loop_control:
+    loop_var: 'user'
+
+- include_tasks: mnt-user-add-group.yaml
+  when: user.groups is defined
+  loop: '{{ gitlab_users }}'
+  loop_control:
+    loop_var: 'user'
+
+- include_tasks: mnt-user-add-ssh-key.yaml
+  when: user.ssh_key is defined
+  loop: '{{ gitlab_users }}'
+  loop_control:
+    loop_var: 'user'

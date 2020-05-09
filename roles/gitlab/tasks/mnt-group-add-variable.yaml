@@ -1,0 +1,15 @@
+---
+#- debug: var=group
+- name: add group {{ group.name }} variable
+  raw: |
+    api_url={{ gitlab_url_api }}
+    token=`cat {{ gitlab_root_token_path }}`
+    group_name={{ group.name }}
+    variable_name={{ item.name }}
+    variable_value={{ item.value }}
+    group_id=`curl -k -s -XGET -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/groups/${group_name} | jq -r '.id'`
+    curl -k -s -XPOST \
+        -H "Content-type: application/json" \
+        -H "PRIVATE-TOKEN: $token" ${api_url}/groups/${group_id}/variables \
+        -d "{ \"key\": \"${variable_name}\", \"variable_type\": \"env_var\", \"value\": \"${variable_value}\" }"
+  with_items: '{{ group.variables }}'

@@ -1,0 +1,10 @@
+---
+#- debug: var=user
+- name: add user {{ user.username }} ssh key
+  raw: |
+    api_url={{ gitlab_url_api }}
+    token=`cat {{ gitlab_root_token_path }}`
+    username={{ user.username }}
+    ssh_key='{{ user.ssh_key }}'
+    user_id=`curl -k -s -XGET -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" "${api_url}/users?username=$username&with_custom_attributes=true" | jq -r '.[].id'`
+    curl -k -s -XPOST -H "Content-type: application/json" -H "PRIVATE-TOKEN: $token" ${api_url}/users/$user_id/keys -d "{ \"title\": \"autoimported\", \"key\": \"$ssh_key\"  }"

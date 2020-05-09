@@ -1,0 +1,14 @@
+---
+
+#- name: Delete a network, disconnecting all containers
+#  docker_network:
+#    name: '{{ docker_network_name }}'
+#    state: absent
+#    force: yes
+
+- name: Create {{ docker_network_name }} network for docker
+  docker_network:
+    name: '{{ docker_network_name }}'
+    ipam_config:
+    - subnet: '{{ docker_network_subnet }}'
+      gateway: '{{ docker_network_gateway }}'

@@ -1,0 +1,52 @@
+---
+- name: create directories
+  file: path={{ item }} recurse=yes state=directory
+  with_items:
+    - '{{ container_folder }}'
+    - '{{ container_folder }}/ssl'
+    - '{{ container_folder }}/conf.d'
+    - '{{ container_folder }}/www'
+    - '{{ container_folder }}/logs'
+
+- name: create directories
+  file: path={{ container_folder }}/www/{{ item.fqdn }} recurse=yes state=directory
+  with_items: '{{ nginx_vhosts }}'
+
+- name: self-signed testing
+  command: >
+    openssl req -x509 -nodes -subj '/CN={{ item.hostname }}' -days 365
+    -newkey rsa:4096 -sha256 -keyout {{ item.key }} -out {{ item.cert }}
+    creates={{ item.cert }}
+  with_items:
+    - key: '{{ container_folder }}/ssl/server.key'
+      cert: '{{ container_folder }}/ssl/server.crt'
+      hostname: '{{ inventory_hostname }}'
+
+# common
+- template: src=nginx.conf dest={{ container_folder }}/nginx.conf owner=root group=root mode=0644
+
+# per vhost
+- template: src=nginx_site.conf dest={{ container_folder }}/conf.d/{{ item.fqdn }}.conf owner=root group=root mode=0644
+  with_items: '{{ nginx_vhosts }}'
+
+# container
+- name: install {{ container_name }} container
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    pull: yes
+    state: started
+    recreate: yes
+    interactive: yes
+    dns_servers: "{{ container_dns_server }}"
+    ports: '{{ container_port_binds }}'
+    volumes: '{{ container_volumes }}'
+    restart_policy: unless-stopped
+    networks: '{{ container_network }}'
+    env: '{{ container_env }}'
+    user: '{{ container_user }}'
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: 1
+    networks_cli_compatible: yes

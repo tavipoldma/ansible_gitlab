@@ -1,0 +1,6 @@
+---
+- hosts: "{{ external_hosts | default('all') }}"
+  tasks:
+    - include_role:
+        name: gitlab
+        tasks_from: mnt-users.yaml

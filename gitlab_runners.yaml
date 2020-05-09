@@ -1,0 +1,17 @@
+---
+- hosts: "{{ external_hosts | default('all') }}"
+  tasks:
+    - include_role: name=gitlab_runner
+      vars:
+        container_name: '{{ runner.name }}'
+        container_ip: '{{ runner.runner_ip }}'
+        runner_capabilities: '{{ runner.capabilities }}'
+        runner_privileged: '{{ runner.privileged }}'
+        runner_untagged: '{{ runner.untagged }}'
+        runner_taglist: '{{ runner.taglist }}'
+        runner_executor: '{{ runner.executor }}'
+        runner_executor_image: '{{ runner.executor_image }}'
+      loop: '{{ gitlab_runners }}'
+      loop_control:
+        loop_var: 'runner'
+      #when: '"gitlab_runner_docker" in group_names'
