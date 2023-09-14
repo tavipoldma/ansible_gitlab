@@ -19,5 +19,3 @@ partial example: reconfigure only runners
 ```bash
 ansible-playbook ansible_gitlab.yaml -l FQDN.IN.HOSTS.YAML -t gitlab_runners -v
 ```
-##
-##
